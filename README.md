@@ -1,3 +1,118 @@
+# Monster House (PS2) — Patch do Protótipo de 15 de Abril de 2006
+
+**Autor:** otaviop  
+**Jogo:** Monster House (PlayStation 2)  
+**Data da build:** 15 de abril de 2006  
+**Executável:** `SCPS_123.45`  
+**Serial do jogo:** `SCPS-12345`  
+**CRC no PCSX2:** `1753EB1F`
+
+## Visão geral
+
+Este patch restaura o desempenho do protótipo inicial de Monster House para PS2 e introduz diversas melhorias:
+
+- Corrige a queda severa de desempenho, que fazia o jogo rodar a apenas 1–2 FPS.
+- Habilita a jogabilidade a 60 FPS.
+- Adiciona suporte adequado à câmera em widescreen 16:9.
+- Corrige o descarte de objetos (*object culling*) para o campo de visão mais amplo.
+- Desativa o desfoque de quadros (*frame blur* ou *ghosting*).
+- Desativa o efeito HDR bloom.
+- Desativa a saída de mensagens de depuração (`debug printf`).
+
+O patch foi testado com o protótipo de Monster House de 15 de abril de 2006 no PCSX2.
+
+**Importante:** Este patch foi desenvolvido especificamente para o executável do protótipo identificado acima. Ele não é compatível com a versão comercial de PS2.
+
+## Instruções de instalação
+
+### 1. Baixe o patch
+
+Baixe o arquivo `.pnach` deste repositório.
+
+### 2. Encontre a pasta de cheats do PCSX2
+
+Abra o PCSX2 e utilize a opção para abrir o diretório de dados do emulador:
+
+1. Abra o PCSX2.
+2. Abra o menu **Tools**.
+3. Selecione **Open Data Directory**.
+4. Localize a pasta chamada `cheats`.
+
+Dependendo da instalação do PCSX2, o diretório de dados pode estar em um local diferente.
+
+### 3. Copie o arquivo do patch
+
+Copie o arquivo `.pnach` baixado para a pasta `cheats`.
+
+**Importante:** O nome do arquivo deve corresponder ao CRC do jogo:
+
+`1753EB1F.pnach`
+
+Se necessário, renomeie o arquivo baixado para utilizar exatamente esse nome.
+
+### 4. Habilite os cheats no PCSX2
+
+1. Abra as configurações do PCSX2.
+2. Acesse **Emulation**.
+3. Habilite a opção **Enable Cheats**.
+4. Salve as configurações, caso solicitado.
+
+### 5. Configure o widescreen
+
+Para obter a apresentação pretendida em 16:9:
+
+1. Abra **Settings > Graphics**.
+2. Localize a opção **Aspect Ratio**.
+3. Selecione **16:9**.
+
+O patch ajusta o comportamento da câmera e do descarte de objetos. A proporção de tela do PCSX2 também precisa estar configurada como 16:9.
+
+### 6. Inicie o jogo
+
+Inicie o protótipo de Monster House de 15 de abril de 2006.
+
+O PCSX2 deverá reconhecer automaticamente o patch quando o CRC do jogo corresponder a `1753EB1F` e os cheats estiverem habilitados.
+
+## Solução de problemas
+
+**O patch não está sendo reconhecido:**
+- Verifique se o arquivo está dentro da pasta `cheats` do PCSX2.
+- Certifique-se de que o nome do arquivo seja exatamente `1753EB1F.pnach`.
+- Confirme se os cheats estão habilitados.
+- Verifique se você está executando a versão correta do protótipo.
+
+**O jogo continua apresentando lentidão:**
+- Confirme se o patch está habilitado.
+- Verifique se o CRC do jogo é `1753EB1F`.
+- Certifique-se de que não está utilizando a versão comercial.
+
+**A imagem não está sendo exibida corretamente em widescreen:**
+- Verifique se a opção Aspect Ratio do PCSX2 está configurada como 16:9.
+
+## Compatibilidade
+
+| Item | Versão compatível |
+|---|---|
+| Jogo | Monster House (PS2) |
+| Build | Protótipo de 15 de abril de 2006 |
+| Executável | SCPS_123.45 |
+| CRC | 1753EB1F |
+| Emulador | PCSX2 |
+
+## Créditos
+
+**Desenvolvimento do patch:** otaviop
+
+## Aviso legal
+
+Este projeto tem como objetivo a preservação de jogos, pesquisa e melhoria de compatibilidade.
+
+Este repositório não distribui o jogo original, imagens ISO, arquivos de BIOS ou conteúdos protegidos por direitos autorais. Você deve fornecer seus próprios arquivos do jogo, obtidos legalmente.
+
+---
+
+# English Version
+
 # Monster House (PS2) — April 15, 2006 Prototype Patch
 
 **Author:** otaviop  
