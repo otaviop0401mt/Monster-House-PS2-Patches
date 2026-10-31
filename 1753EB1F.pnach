@@ -146,28 +146,3 @@ patch=1,EE,0011CCC0,word,03E00008
 patch=1,EE,0011CCC4,word,0000102D
 patch=1,EE,00135050,word,03E00008
 patch=1,EE,00135054,word,0000102D
-
-// ====================================================================
-// OPTIONAL TEST GROUP (disabled by default)
-// ====================================================================
-[Optional - Test: Aggressive Timeout (16,384 iterations)]
-author=otaviop
-description=Performance test for scenes with many effects: further reduces the sceGsSyncPath limits (from 65,536 to 16,384 iterations). May cause graphical glitches under heavy loads. Enable alongside the main group.
-
-// --------------------------------------------------------------------
-// Author: otaviop
-// Details: the same five limits from section 1 of the main group, now set to 0x4000
-// (16,384 iterations) instead of 0x10000 (65,536). In scenes with many particles
-// there is more data in the GIF queue, so sceGsSyncPath may spend
-// more EE time per frame waiting. This group tests whether the drop to
-// 30 FPS is caused by this wait. Since this group is applied after the main group, its
-// values override the main group at the same addresses.
-//   00117B50 / 00117B94 / 00117C54: addiu a0,zero,0x4000 (24044000)
-//   00117BE0: addiu a2,zero,0x4000 (24064000)
-//   00117C18: addiu v1,zero,0x4000 (24034000)
-// --------------------------------------------------------------------
-patch=1,EE,00117B50,word,24044000
-patch=1,EE,00117B94,word,24044000
-patch=1,EE,00117BE0,word,24064000
-patch=1,EE,00117C18,word,24034000
-patch=1,EE,00117C54,word,24044000
