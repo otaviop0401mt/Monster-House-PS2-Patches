@@ -1,7 +1,3 @@
-# Monster-House-PS2-Patches
-Patches and restoration work for the Monster House PS2 prototype and commercial release.
-# Monster House (PS2) — April 15, 2006 Prototype Patch
-
 **Author:** otaviop  
 **Game:** Monster House (PlayStation 2)  
 **Build date:** April 15, 2006  
