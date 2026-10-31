@@ -1,0 +1,173 @@
+gametitle=Monster House (Apr 15, 2006 prototype) [SCPS-12345] CRC 1753EB1F
+
+// ====================================================================
+// MONSTER HOUSE (PS2) - APRIL 15, 2006 PROTOTYPE
+// Executable: SCPS_123.45 (SCPS-12345)  |  PCSX2 CRC: 1753EB1F
+// Author: otaviop
+//
+// Unified patch. Fixes the prototype slowdown and adds
+// 60 FPS and 16:9 widescreen. All addresses are in EE RAM and apply
+// only to this executable (do not apply to the commercial SLUS_214.00 version).
+//
+// REQUIREMENT: In PCSX2, Settings > Graphics > Aspect Ratio = 16:9.
+// ====================================================================
+
+[Monster House Prototype - Complete Fix (otaviop)]
+author=otaviop
+description=Fixes the 1-2 FPS slowdown, enables 60 FPS and 16:9 widescreen (camera and culling), removes frame blur/HDR bloom, and disables debug printf output. Requires 16:9 aspect ratio in PCSX2.
+
+// --------------------------------------------------------------------
+// 1) SLOWDOWN FIX (1-2 FPS)  -  sceGsSyncPath (0x00117B28)
+// Author: otaviop
+// Details: sceGsSyncPath is a Sony graphics library function that
+// waits for the graphics hardware to finish receiving data (DMA 1, DMA 2, VIF1,
+// VU1, and GIF) before continuing. Each wait has a limit counter of
+// 16,777,216 iterations (0x01000000). In the prototype, this wait reached
+// its limit every frame (approximately 0.4 seconds of stalled CPU time per frame), resulting in
+// 1-2 FPS even with the emulator running at 100%. The patch changes the five limits
+// ("lui rX,0x100") to 0x10000 = 65,536 iterations. The function still
+// waits, but gives up much sooner if the GIF does not become available.
+//   00117B50 / 00117B94 / 00117C54: 3C040100 -> 3C040001 (lui a0,0x1)
+//   00117BE0: 3C060100 -> 3C060001 (lui a2,0x1)
+//   00117C18: 3C030100 -> 3C030001 (lui v1,0x1)
+// --------------------------------------------------------------------
+patch=1,EE,00117B50,word,3C040001
+patch=1,EE,00117B94,word,3C040001
+patch=1,EE,00117BE0,word,3C060001
+patch=1,EE,00117C18,word,3C030001
+patch=1,EE,00117C54,word,3C040001
+
+// --------------------------------------------------------------------
+// 2) 60 FPS - DISPLAY ON EVERY VSYNC  -  InitGS (0x00165C4C and 0x00165D08)
+// Author: otaviop
+// Details: the game updates the displayed image every N VSync intervals, where N comes
+// from the muiMinVSyncWait variable (0x004B7010) plus 1. GS initialization
+// wrote 1 to this variable, so the image was updated every 2 VSync intervals
+// (30 Hz). The patch changes the value written from 1 to 0, so the image
+// is updated on every VSync interval (60 Hz).
+//   00165C4C / 00165D08: AC227010 (sw v0,28688(at)) -> AC207010 (sw zero,28688(at))
+// --------------------------------------------------------------------
+patch=1,EE,00165C4C,word,AC207010
+patch=1,EE,00165D08,word,AC207010
+
+// --------------------------------------------------------------------
+// 3) 60 FPS - ENGINE FRAME-RATE CAP  -  SetFPS (0x0025DCC0)
+// Author: otaviop
+// Details: SetFPS sets the target time for each frame (1/FPS), using the lower
+// value between the FPS requested by the game script and the MaxFPS setting in
+// ENGINE.INI (which is 30). The patch makes the function always use 60, so the
+// engine internal limiter targets 1/60 second per frame, without needing to
+// modify the disc.
+//   0025DCF4: 0070082B (sltu)            -> 2410003C (addiu s0,zero,60)
+//   0025DCF8: 10200002 (beq)             -> 00000000 (nop)
+//   0025DD00: 0060802D (daddu s0,v1,zero)-> 00000000 (nop)
+// --------------------------------------------------------------------
+patch=1,EE,0025DCF4,word,2410003C
+patch=1,EE,0025DCF8,word,00000000
+patch=1,EE,0025DD00,word,00000000
+
+// --------------------------------------------------------------------
+// 4) 16:9 - CAMERA (HORIZONTAL FIELD OF VIEW)  -  CreateProjectionMatrix (0x00163340)
+// Author: otaviop
+// Details: the 3D camera projection matrix uses the horizontal scale
+// 1/f23. The patch changes it to 0.75/f23 (perspective branch), allowing the camera
+// to show 4/3 more of the scene horizontally while keeping the same vertical view. The
+// PCSX2 stretches the 4:3 frame to 16:9, and the proportions remain correct. To
+// accommodate the new calculation, the jump at 0016338C goes to a code section
+// placed at 0012371C..00123728 (unused padding space after
+// _xlaunch): it calculates f2 = 0.75/f23 and returns to 00163394.
+//   00163380: 3C033F80 (lui v1,0x3f80, repetido) -> 3C013F40 (lui at,0x3f40)
+//   0016338C: 46170883 (div.s f2,f1,f23)         -> 08048DC7 (j 0x0012371C)
+//   0012371C: mtc1 at,f2 | 00123720: div.s f2,f2,f23 | 00123724: j 0x00163394 | 00123728: nop
+// --------------------------------------------------------------------
+patch=1,EE,00163380,word,3C013F40
+patch=1,EE,0016338C,word,08048DC7
+patch=1,EE,0012371C,word,44811000
+patch=1,EE,00123720,word,46171083
+patch=1,EE,00123724,word,08058CE5
+patch=1,EE,00123728,word,00000000
+
+// --------------------------------------------------------------------
+// 5) 16:9 - CULLING (OBJECTS AT THE SIDES)  -  EGFrustum::SetFromCameraParams (0x00108C60)
+// Author: otaviop
+// Details: the game decides what to render using a frustum (view volume)
+// built from the original 4:3 viewport. With the wider camera, objects and
+// areas at the sides were being left out. The patch
+// divides the frustum horizontal extent by 0.75 (that is, multiplies it by 4/3), so the
+// game also loads areas outside the 4:3 region. The jump at 00108C84 goes to a
+// section at 0012372C..0012373C (also unused padding space):
+// f23 = f12 / 0.75, then returns to 00108C8C.
+//   00108C84: 460065C6 (mov.s f23,f12) -> 08048DCB (j 0x0012372C)
+//   0012372C: lui at,0x3f40 | 00123730: mtc1 at,f0 | 00123734: div.s f23,f12,f0
+//   00123738: j 0x00108C8C  | 0012373C: nop
+// --------------------------------------------------------------------
+patch=1,EE,00108C84,word,08048DCB
+patch=1,EE,0012372C,word,3C013F40
+patch=1,EE,00123730,word,44810000
+patch=1,EE,00123734,word,460065C3
+patch=1,EE,00123738,word,08042323
+patch=1,EE,0012373C,word,00000000
+
+// --------------------------------------------------------------------
+// 6) DISABLE FRAME BLUR (GHOSTING)  -  EnableFrameBlur (0x0024DE90)
+// Author: otaviop
+// Details: the prototype has an effect that blends the previous frame with the
+// current frame (frame blur), creating trails and a double-image effect. The game
+// script enables the effect by calling EnableFrameBlur, which writes two flags. The
+// patch forces both flags to 0, regardless of the value
+// requested by the script.
+//   0024DE90: 0005182B (sltu v1,zero,a1) -> 0000182D (daddu v1,zero,zero)
+//   0024DE9C: 0004202B (sltu a0,zero,a0) -> 0000202D (daddu a0,zero,zero)
+// --------------------------------------------------------------------
+patch=1,EE,0024DE90,word,0000182D
+patch=1,EE,0024DE9C,word,0000202D
+
+// --------------------------------------------------------------------
+// 7) DISABLE HDR BLOOM (BLUR)  -  EnableHighDynamicRange (0x0024DDF0)
+// Author: otaviop
+// Details: the HDR/bloom effect adds a blurred glow over the scene. It is
+// enabled by the script through EnableHighDynamicRange, which writes a flag with
+// a value of 1. The patch changes 1 to 0, keeping the effect disabled.
+//   0024DDFC: 24040001 (addiu a0,zero,1) -> 24040000 (addiu a0,zero,0)
+// --------------------------------------------------------------------
+patch=1,EE,0024DDFC,word,24040000
+
+// --------------------------------------------------------------------
+// 8) DISABLE DEBUG PRINTF  -  printf (0x00135050) and scePrintf (0x0011CCC0)
+// Author: otaviop
+// Details: the prototype contains hundreds of debug text calls (more than
+// 300 in the code). The patch makes both print functions immediately return 0,
+// without formatting or sending any text. This reduces per-frame work
+// and log spam. It does not affect game logic.
+//   0011CCC0 / 00135050: 1ª instrução -> 03E00008 (jr ra)
+//   0011CCC4 / 00135054: 2ª instrução -> 0000102D (daddu v0,zero,zero)
+// --------------------------------------------------------------------
+patch=1,EE,0011CCC0,word,03E00008
+patch=1,EE,0011CCC4,word,0000102D
+patch=1,EE,00135050,word,03E00008
+patch=1,EE,00135054,word,0000102D
+
+// ====================================================================
+// OPTIONAL TEST GROUP (disabled by default)
+// ====================================================================
+[Optional - Test: Aggressive Timeout (16,384 iterations)]
+author=otaviop
+description=Performance test for scenes with many effects: further reduces the sceGsSyncPath limits (from 65,536 to 16,384 iterations). May cause graphical glitches under heavy loads. Enable alongside the main group.
+
+// --------------------------------------------------------------------
+// Author: otaviop
+// Details: the same five limits from section 1 of the main group, now set to 0x4000
+// (16,384 iterations) instead of 0x10000 (65,536). In scenes with many particles
+// there is more data in the GIF queue, so sceGsSyncPath may spend
+// more EE time per frame waiting. This group tests whether the drop to
+// 30 FPS is caused by this wait. Since this group is applied after the main group, its
+// values override the main group at the same addresses.
+//   00117B50 / 00117B94 / 00117C54: addiu a0,zero,0x4000 (24044000)
+//   00117BE0: addiu a2,zero,0x4000 (24064000)
+//   00117C18: addiu v1,zero,0x4000 (24034000)
+// --------------------------------------------------------------------
+patch=1,EE,00117B50,word,24044000
+patch=1,EE,00117B94,word,24044000
+patch=1,EE,00117BE0,word,24064000
+patch=1,EE,00117C18,word,24034000
+patch=1,EE,00117C54,word,24044000
